@@ -35,8 +35,11 @@ The upload test posts up to 4 MB to the same PHP endpoint. PHP's `post_max_size`
 - CPU, memory and touch hints; battery, storage estimates, media-device enumeration and opt-in motion/orientation sampling.
 - Browser APIs, image formats, media codec support, WebGL details, local canvas and offline-audio rendering hashes.
 - Privacy signals, permissions, secure-context state, storage APIs and automation indicators.
-- JavaScript execution and animation-frame cadence benchmarks.
-- Opt-in GPS, JSON export, copy report and print-to-PDF through the browser.
+- JavaScript, CPU-loop, DOM, local-storage and animation-frame cadence benchmarks; WebGPU adapter capability inspection where available.
+- Keyboard, pointer, wheel and touch counters; gamepad sampling; display visual patterns; opt-in audio tone tests.
+- Opt-in camera/microphone preview, GPS and motion/sensor sampling.
+- Repeated HTTP timing samples for approximate stability/jitter/loss indicators, independent public-IP comparison, response security-header inspection and accessibility/environment signals.
+- JSON and CSV export, redacted JSON export, copy report, optional local report history/comparison and print-to-PDF through the browser.
 
 ## Privacy and limitations
 
@@ -49,7 +52,10 @@ The upload test posts up to 4 MB to the same PHP endpoint. PHP's `post_max_size`
 - IP geolocation is approximate and is not a substitute for GPS.
 - Browser network timing is not ICMP ping. Browser tests may be affected by CORS, extensions, VPNs, proxies, privacy settings, captive portals and endpoint availability.
 - WebRTC may reveal local or public network candidates to the page and the configured STUN service. The test is deliberately opt-in.
-- Upload/download tests consume data. Upload tests are capped at 4 MB in the UI and 8 MB at the endpoint.\n- HTTP stability results are not ICMP packet loss or standardized jitter. Provider comparison and VPN/proxy interpretation are heuristic.\n- Security-header inspection sees only headers exposed for this page response. TLS certificate-chain inspection, full HTTP/3 negotiation testing, path-MTU discovery, OS-level DNS leak tests, captive-portal certainty, and physical screen/audio hardware validation need capabilities or services beyond a normal browser page and are not claimed as implemented.\n- Local report history remains on the current browser profile; it is not synchronized between devices. Redacted exports should still be reviewed before sharing.
+- Upload/download tests consume data. Upload tests are capped at 4 MB in the UI and 8 MB at the endpoint.
+- HTTP stability results are not ICMP packet loss or standardized jitter. Provider comparison and VPN/proxy interpretation are heuristic.
+- Security-header inspection sees only headers exposed for this page response. TLS certificate-chain inspection, full HTTP/3 negotiation testing, path-MTU discovery, OS-level DNS leak tests, captive-portal certainty, and physical screen/audio hardware validation need capabilities or services beyond a normal browser page and are not claimed as implemented.
+- Local report history remains on the current browser profile; it is not synchronized between devices. Redacted exports should still be reviewed before sharing.
 - Results are diagnostic hints, not a security audit, device identity proof, speed guarantee or forensic report.
 
 ## Search indexing
