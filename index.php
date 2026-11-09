@@ -28,12 +28,159 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && ($_GET['action'] ?? '') =
  header('Content-Type: application/javascript; charset=utf-8'); header('Service-Worker-Allowed: ' . rtrim(str_replace('\\\\', '/', dirname((string)($_SERVER['SCRIPT_NAME'] ?? '/'))), '/') . '/'); header('Cache-Control: no-cache');
  echo <<<'JS'
 const CACHE='araha-diagnostics-shell-v1',OFFLINE=new URL('./__araha-diagnostics-offline.html',self.registration.scope).pathname;
-self.addEventListener('install',e=>e.waitUntil((async()=>{const c=await caches.open(CACHE);await c.put(OFFLINE,new Response('<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Araha Diagnostics · Offline</title><style>body{margin:0;background:#080a0e;color:#e8edf4;font:16px system-ui;min-height:100vh;display:grid;place-items:center}main{max-width:560px;padding:32px;border:1px solid #252e3a;border-radius:16px;background:#10141b}h1{color:#69d3c1}p{color:#91a0b2}</style><main><h1>Araha Diagnostics</h1><p>You are offline. The live PHP application and server-assisted tests require a connection.</p><p>Reconnect and reopen this page. Previously saved snapshots remain in this browser.</p></main></html>',{headers:{'Content-Type':'text/html; charset=utf-8'}}));await self.skipWaiting();})()));
+self.addEventListener('install',e=>e.waitUntil((async()=>{const c=await caches.open(CACHE);await c.put(OFFLINE,new Response('<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Araha Diagnostics · Offline</title><style>body{margin:0;background:#080a0e;color:#e8edf4;font:16px system-ui;min-height:100vh;display:grid;place-items:center}main{max-width:560px;padding:32px;border:1px solid #252e3a;border-radius:16px;background:#10141b}h1{color:#69d3c1}p{color:#91a0b2}
+/* Visual refinement and user-selectable light appearance */
+:root{--card-gap:20px;--card-pad:22px}
+.hero{gap:20px;margin-bottom:22px}
+.hero-card,.card{padding:var(--card-pad);box-shadow:0 8px 24px rgba(0,0,0,.10)}
+.grid{gap:var(--card-gap) 22px}
+.card h3{margin-bottom:15px;line-height:1.35}
+.section-head{margin:14px 0 17px}
+.metric{padding:14px}
+.tabs{gap:9px;padding-bottom:17px}
+.panel>.grid+.section-head{margin-top:26px}
+[data-theme="light"]{color-scheme:light;--bg:#f3f6f9;--panel:#fff;--panel2:#f7f9fb;--line:#d9e1e8;--text:#17212b;--muted:#607080;--accent:#087e70;--accent2:#315f9b;--good:#168452;--warn:#9b6500;--bad:#b93636}
+[data-theme="light"] body{background:radial-gradient(ellipse at 12% -15%,#d9f0eb 0,transparent 42%),var(--bg);color:var(--text)}
+[data-theme="light"] .hero-card,[data-theme="light"] .card{background:#fff;border-color:var(--line);box-shadow:0 5px 18px rgba(25,45,65,.07)}
+[data-theme="light"] .mark{background:#e5f3f0;border-color:#a9d3cb;color:#087e70}
+[data-theme="light"] .btn{background:#f5f8fa;color:#1b2935;border-color:#d4dee6}
+[data-theme="light"] .btn:hover{background:#eaf2f5;border-color:#8bb6ad}
+[data-theme="light"] .btn.primary{background:#087e70;border-color:#087e70;color:#fff}
+[data-theme="light"] .metric{background:#f7f9fb;border-color:#dce4eb}
+[data-theme="light"] .tab{color:#5c6b78;border-color:#d9e1e8}
+[data-theme="light"] .tab[aria-selected=true]{background:#e3f3ef;color:#087e70;border-color:#9acbc0}
+[data-theme="light"] .card h3,[data-theme="light"] .kv .v{color:#1c2a36}
+[data-theme="light"] .tag{color:#425464;border-color:#d5dfe7;background:#f8fafb}
+[data-theme="light"] .pill{color:#586978;border-color:#d4dee6}
+[data-theme="light"] .pill.ok{color:#16754d;border-color:#a9d8c2}
+[data-theme="light"] .pill.warn{color:#8a5b00;border-color:#e6d3a6}
+[data-theme="light"] .notice{background:#fff8e8;color:#76500b;border-color:#ead39b}
+[data-theme="light"] .progress{background:#e2e8ed}
+[data-theme="light"] .meter{background:#e7edf1;border-color:#d5dfe6}
+[data-theme="light"] .score-value{color:#17212b}
+[data-theme="light"] .score-value.good{color:#168452}
+[data-theme="light"] .score-value.warn{color:#9b6500}
+[data-theme="light"] .score-value.bad{color:#b93636}
+[data-theme="light"] footer{border-color:#d9e1e8}
+@media(max-width:680px){:root{--card-pad:18px;--card-gap:16px}.grid{gap:16px}}
+</style><main><h1>Araha Diagnostics</h1><p>You are offline. The live PHP application and server-assisted tests require a connection.</p><p>Reconnect and reopen this page. Previously saved snapshots remain in this browser.</p></main></html>',{headers:{'Content-Type':'text/html; charset=utf-8'}}));await self.skipWaiting();})()));
 self.addEventListener('activate',e=>e.waitUntil((async()=>{for(const k of await caches.keys())if(k.startsWith('araha-diagnostics-')&&k!==CACHE)await caches.delete(k);await self.clients.claim();})()));
 self.addEventListener('fetch',e=>{const r=e.request;if(r.method!=='GET'||new URL(r.url).origin!==self.location.origin)return;if(r.mode==='navigate')e.respondWith(fetch(r).catch(async()=>await caches.match(OFFLINE)));});
 JS;
  exit;
 }
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_GET['action'] ?? '') === 'pdf-report') {
+    $maxBytes = 512 * 1024;
+    $length = (int)($_SERVER['CONTENT_LENGTH'] ?? 0);
+    if ($length < 2 || $length > $maxBytes) { http_response_code(413); header('Content-Type: text/plain; charset=utf-8'); echo 'Report is empty or too large.'; exit; }
+    $raw = file_get_contents('php://input', false, null, 0, $maxBytes + 1);
+    $report = is_string($raw) ? json_decode($raw, true) : null;
+    if (!is_array($report)) { http_response_code(400); header('Content-Type: text/plain; charset=utf-8'); echo 'Invalid report data.'; exit; }
+
+    $toPdfText = static function (string $value): string {
+        $value = preg_replace('/[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F]/', ' ', $value) ?? '';
+        if (function_exists('iconv')) {
+            $converted = @iconv('UTF-8', 'Windows-1252//TRANSLIT//IGNORE', $value);
+            if (is_string($converted)) $value = $converted;
+        } else {
+            $value = preg_replace('/[^\\x20-\\x7E]/', '?', $value) ?? '';
+        }
+        return str_replace(["\\\\", "(", ")", "\\r", "\\n"], ["\\\\\\\\", "\\\\(", "\\\\)", ' ', ' '], $value);
+    };
+    $display = static function ($value): string {
+        if (is_array($value) || is_object($value)) return json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE) ?: '[complex value]';
+        if (is_bool($value)) return $value ? 'Yes' : 'No';
+        if ($value === null || $value === '') return 'Not recorded';
+        return (string)$value;
+    };
+    $lines = [];
+    $lines[] = ['kind' => 'subtitle', 'text' => 'Generated locally from the current browser session'];
+    $lines[] = ['kind' => 'meta', 'text' => 'Generated: ' . gmdate('Y-m-d H:i:s') . ' UTC'];
+    $lines[] = ['kind' => 'space', 'text' => ''];
+    $flatten = static function ($value, string $prefix, int $depth = 0) use (&$flatten, &$lines, $display): void {
+        if (count($lines) > 1800 || $depth > 8) return;
+        if (is_array($value) && $value !== []) {
+            foreach ($value as $key => $child) {
+                $name = $prefix === '' ? (string)$key : $prefix . ' / ' . (string)$key;
+                if (is_array($child) && $child !== []) $flatten($child, $name, $depth + 1);
+                else $lines[] = ['kind' => 'body', 'text' => $name . ': ' . $display($child)];
+                if (count($lines) > 1800) break;
+            }
+        } elseif ($prefix !== '') {
+            $lines[] = ['kind' => 'body', 'text' => $prefix . ': ' . $display($value)];
+        }
+    };
+    foreach ($report as $key => $value) {
+        $title = strtoupper(str_replace(['_', '-'], ' ', (string)$key));
+        $lines[] = ['kind' => 'heading', 'text' => $title];
+        if (is_array($value) && $value !== []) $flatten($value, (string)$key);
+        else $lines[] = ['kind' => 'body', 'text' => (string)$key . ': ' . $display($value)];
+        $lines[] = ['kind' => 'space', 'text' => ''];
+    }
+    if (count($lines) <= 4) $lines[] = ['kind' => 'body', 'text' => 'No diagnostic tests have supplied report data yet.'];
+
+    $wrapped = [];
+    foreach ($lines as $line) {
+        if ($line['kind'] !== 'body' && $line['kind'] !== 'meta') { $wrapped[] = $line; continue; }
+        $parts = explode("\\n", wordwrap((string)$line['text'], 94, "\\n", true));
+        foreach ($parts as $part) $wrapped[] = ['kind' => $line['kind'], 'text' => $part];
+    }
+    $pages = array_chunk($wrapped, 48);
+    $objects = [];
+    $objects[1] = '<< /Type /Catalog /Pages 2 0 R >>';
+    $objects[3] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';
+    $objects[4] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';
+    $pageRefs = [];
+    foreach ($pages as $index => $pageLines) {
+        $pageObj = 5 + ($index * 2);
+        $streamObj = $pageObj + 1;
+        $pageRefs[] = $pageObj . ' 0 R';
+        $content = "q 0.035 0.075 0.09 rg 0 742 612 50 re f Q\n";
+        $content .= "BT /F2 19 Tf 1 1 1 rg 48 764 Td (ARAHA DIAGNOSTICS) Tj ET\n";
+        $content .= "BT /F1 8 Tf 0.78 0.86 0.88 rg 48 750 Td (DEVICE AND NETWORK REPORT) Tj ET\n";
+        $y = 720;
+        foreach ($pageLines as $line) {
+            if ($line['kind'] === 'space') { $y -= 7; continue; }
+            if ($line['kind'] === 'heading') {
+                $content .= "q 0.91 0.96 0.95 rg 42 " . ($y - 5) . " 528 19 re f Q\n";
+                $content .= "BT /F2 9 Tf 0.04 0.24 0.22 rg 50 $y Td (" . $toPdfText($line['text']) . ") Tj ET\n";
+                $y -= 25;
+            } elseif ($line['kind'] === 'subtitle') {
+                $content .= "BT /F1 9 Tf 0.20 0.35 0.38 rg 48 $y Td (" . $toPdfText($line['text']) . ") Tj ET\n";
+                $y -= 16;
+            } elseif ($line['kind'] === 'meta') {
+                $content .= "BT /F1 8 Tf 0.42 0.47 0.50 rg 48 $y Td (" . $toPdfText($line['text']) . ") Tj ET\n";
+                $y -= 15;
+            } else {
+                $content .= "BT /F1 8.5 Tf 0.12 0.16 0.20 rg 50 $y Td (" . $toPdfText($line['text']) . ") Tj ET\n";
+                $y -= 13;
+            }
+        }
+        $content .= "q 0.78 0.82 0.84 RG 0.5 w 42 35 m 570 35 l S Q\n";
+        $content .= "BT /F1 8 Tf 0.42 0.47 0.50 rg 48 21 Td (Araha Diagnostics  |  Page " . ($index + 1) . " of " . count($pages) . ") Tj ET\n";
+        $objects[$pageObj] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ' . $streamObj . ' 0 R >>';
+        $objects[$streamObj] = '<< /Length ' . strlen($content) . " >>\nstream\n" . $content . "endstream";
+    }
+    $objects[2] = '<< /Type /Pages /Kids [' . implode(' ', $pageRefs) . '] /Count ' . count($pages) . ' >>';
+    ksort($objects);
+    $pdf = "%PDF-1.4\n% Araha report\n";
+    $offsets = [0];
+    $maxObj = max(array_keys($objects));
+    for ($i = 1; $i <= $maxObj; $i++) {
+        $offsets[$i] = strlen($pdf);
+        $pdf .= $i . " 0 obj\n" . ($objects[$i] ?? '<< >>') . "\nendobj\n";
+    }
+    $xref = strlen($pdf);
+    $pdf .= "xref\n0 " . ($maxObj + 1) . "\n0000000000 65535 f \n";
+    for ($i = 1; $i <= $maxObj; $i++) $pdf .= sprintf("%010d 00000 n \n", $offsets[$i]);
+    $pdf .= "trailer\n<< /Size " . ($maxObj + 1) . " /Root 1 0 R >>\nstartxref\n" . $xref . "\n%%EOF";
+    header('Content-Type: application/pdf');
+    header('Content-Disposition: attachment; filename="araha-diagnostics-report-' . gmdate('Ymd-His') . '.pdf"');
+    header('Content-Length: ' . strlen($pdf));
+    echo $pdf;
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_GET['action'] ?? '') === 'upload-test') {
     // Measures upload throughput without writing the payload to disk.
     $max = 8 * 1024 * 1024;
@@ -155,7 +302,7 @@ $serverSnapshot = [
 <meta name="robots" content="noindex,nofollow,noarchive,nosnippet,noimageindex">
 <meta name="googlebot" content="noindex,nofollow,noarchive,nosnippet,noimageindex">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<meta name="theme-color" content="#080a0e">
+<meta name="theme-color" content="#080a0e" id="themeColorMeta">
 <title>Araha | Device & Network Diagnostics</title>
 <link rel="manifest" href="?action=pwa-manifest">
 <style>
@@ -182,7 +329,7 @@ footer{border-top:1px solid var(--line);margin-top:26px;padding-top:15px;display
 <div class="wrap">
 <header>
  <div class="brand"><div class="mark">A</div><div><div class="eyebrow">Araha diagnostics</div><h1>Device & Network Intelligence</h1></div></div>
- <div class="header-actions"><button class="btn" id="refreshBtn">↻ Refresh data</button><button class="btn" id="copyBtn">Copy report</button><button class="btn" id="jsonBtn">Export JSON</button><button class="btn primary" onclick="window.print()">Print report</button></div>
+ <div class="header-actions"><button class="btn" id="themeToggle" type="button" aria-pressed="false">☀ Light mode</button><button class="btn" id="refreshBtn">↻ Refresh data</button><button class="btn" id="copyBtn">Copy report</button><button class="btn" id="jsonBtn">Export JSON</button><button class="btn primary" id="pdfBtn" type="button">Download PDF</button></div>
 </header>
 <div class="hero">
  <div class="hero-card"><div class="eyebrow">Public address observed by this site</div><div class="ip-big" id="publicIp"><?= htmlspecialchars($ipValid ? $ip : 'Unavailable', ENT_QUOTES, 'UTF-8') ?></div><div class="subline" id="ipLocation"><?= $ipInfo ? htmlspecialchars(trim(($ipInfo['city'] ?? '') . ', ' . ($ipInfo['region'] ?? '') . ', ' . ($ipInfo['country'] ?? ''), ', '), ENT_QUOTES, 'UTF-8') : 'Location lookup unavailable' ?></div><div class="status-row"><span class="pill <?= $serverSnapshot['https'] ? 'ok' : 'warn' ?>"><?= $serverSnapshot['https'] ? 'HTTPS connection' : 'Insecure HTTP context' ?></span><span class="pill" id="onlinePill">Checking connectivity…</span><span class="pill" id="privacyPill">Privacy signals pending</span></div></div>
@@ -441,6 +588,29 @@ window.addEventListener('pagehide',stopAV);
 const actions={addresses:runAddresses,latency:runLatency,dns:runDNS,download:runDownload,upload:runUpload,webrtc:runWebRTC,gps:runGPS,sensors:runSensors,canvas:runCanvas,audio:runAudio,jsbench:runJSBench,fps:runFPS,battery:refreshBattery,storage:refreshStorage,permissions:refreshPermissions,media:()=>refreshMedia(true)};
 document.querySelectorAll('[data-run]').forEach(b=>b.addEventListener('click',async()=>{b.disabled=true;try{await actions[b.dataset.run]();}catch(e){console.error(e);}finally{b.disabled=false;}}));
 document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.setAttribute('aria-selected',String(x===b)));document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===b.dataset.tab));if(b.dataset.tab!=='advanced')stopAV();}));
+
+const themeToggle=$('themeToggle');
+function applyTheme(theme){
+ const light=theme==='light';
+ document.documentElement.dataset.theme=light?'light':'dark';
+ if(themeToggle){themeToggle.textContent=light?'☾ Dark mode':'☀ Light mode';themeToggle.setAttribute('aria-pressed',String(light));}
+ const meta=$('themeColorMeta');if(meta)meta.content=light?'#f3f6f9':'#080a0e';
+ try{localStorage.setItem('araha_diag_theme',light?'light':'dark');}catch(e){}
+}
+let savedTheme='dark';try{savedTheme=localStorage.getItem('araha_diag_theme')==='light'?'light':'dark';}catch(e){}
+applyTheme(savedTheme);
+themeToggle?.addEventListener('click',()=>applyTheme(document.documentElement.dataset.theme==='light'?'dark':'light'));
+$('pdfBtn').addEventListener('click',async()=>{
+ const button=$('pdfBtn'),old=button.textContent;button.disabled=true;button.textContent='Building PDF…';
+ try{
+  const response=await fetch(location.pathname+'?action=pdf-report',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(D)});
+  if(!response.ok){const message=await response.text();throw Error(message||('HTTP '+response.status));}
+  const blob=await response.blob();if(blob.type!=='application/pdf')throw Error('The server did not return a PDF file.');
+  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='araha-diagnostics-'+new Date().toISOString().replace(/[:.]/g,'-')+'.pdf';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+ }catch(e){alert('PDF generation failed: '+e.message);}
+ finally{button.disabled=false;button.textContent=old;}
+});
+
 $('refreshBtn').addEventListener('click',()=>location.reload());
 $('copyBtn').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(JSON.stringify(D,null,2));$('copyBtn').textContent='Copied';setTimeout(()=>$('copyBtn').textContent='Copy report',1500);}catch(e){alert('Clipboard access was blocked. Use Export JSON instead.');}});
 $('jsonBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(D,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='araha-diagnostics-'+new Date().toISOString().replace(/[:.]/g,'-')+'.json';a.click();URL.revokeObjectURL(a.href);});
