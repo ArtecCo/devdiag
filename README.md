@@ -40,16 +40,16 @@ The upload test posts up to 4 MB to the same PHP endpoint. PHP's `post_max_size`
 
 ## Privacy and limitations
 
-- Diagnostic data is assembled in the visitor's browser. There is no database, analytics service, account system or diagnostic-history storage.
+- Diagnostic data is assembled in the visitor's browser. There is no database, analytics service or account system. Optional report history is saved only in the visitor's local browser storage after the visitor explicitly saves it (up to 10 reports).
 - IP intelligence lookup sends the visitor IP to IPWho.is from the PHP server. Network tests contact the named third-party endpoints when the visitor starts those tests.
 - GPS, WebRTC candidate inspection, sensor sampling, throughput tests and local fingerprint samples are user-triggered. GPS coordinates and local rendering hashes are only added to the in-page report and are not automatically submitted to this site.
-- The page does not open camera or microphone streams. Media enumeration may show generic device counts and labels only after browser permission has been granted elsewhere.
+- Camera and microphone testing is opt-in and opens a local preview only after permission. Tracks are stopped when the visitor presses Stop, leaves the Extended tests tab, or leaves the page. Media enumeration may show generic device counts and labels only after browser permission has been granted.
 - Forwarded-IP headers are displayed as untrusted hints and are never used as the visitor's authoritative IP.
 - Browser APIs intentionally hide information. JavaScript cannot reliably read the device's MAC address, serial number, exact hardware model, installed applications, Wi-Fi SSID/password, router configuration, operating-system DNS resolver, full TLS certificate details, or all browser/network internals. The site does not attempt to bypass those protections.
 - IP geolocation is approximate and is not a substitute for GPS.
 - Browser network timing is not ICMP ping. Browser tests may be affected by CORS, extensions, VPNs, proxies, privacy settings, captive portals and endpoint availability.
 - WebRTC may reveal local or public network candidates to the page and the configured STUN service. The test is deliberately opt-in.
-- Upload/download tests consume data. Upload tests are capped at 4 MB in the UI and 8 MB at the endpoint.
+- Upload/download tests consume data. Upload tests are capped at 4 MB in the UI and 8 MB at the endpoint.\n- HTTP stability results are not ICMP packet loss or standardized jitter. Provider comparison and VPN/proxy interpretation are heuristic.\n- Security-header inspection sees only headers exposed for this page response. TLS certificate-chain inspection, full HTTP/3 negotiation testing, path-MTU discovery, OS-level DNS leak tests, captive-portal certainty, and physical screen/audio hardware validation need capabilities or services beyond a normal browser page and are not claimed as implemented.\n- Local report history remains on the current browser profile; it is not synchronized between devices. Redacted exports should still be reviewed before sharing.
 - Results are diagnostic hints, not a security audit, device identity proof, speed guarantee or forensic report.
 
 ## Search indexing
