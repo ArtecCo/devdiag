@@ -85,3 +85,18 @@ The Intelligence tab combines test results already collected in the current page
 - Scores depend on which tests have been run and on the browser, device, network route, hosting server and test conditions. They are not security certifications, hardware grades, or guarantees of service quality.
 
 The existing troubleshooting assessment remains available separately. The Intelligence dashboard does not run permission-sensitive tests automatically; run only the tests you consent to.
+
+## Diagnostic profiles, technician mode and PWA
+
+The Overview includes four selectable profiles:
+
+- **Quick** runs a small set of basic browser/device and connectivity checks.
+- **Standard** adds DNS, download, response-header and browser capability checks.
+- **Advanced** adds repeated HTTP quality, loaded-latency, server-side DNS/TLS/HTTP, resource, frame-cadence and benchmark checks.
+- **Full** runs the available safe automated checks across those areas. It does not automatically request GPS, WebRTC candidate inspection, camera, microphone, motion sensors, keyboard or pointer interaction. Those remain manual and permission/interaction controlled.
+
+Profiles execute their tests sequentially and show progress. Stop requests take effect after the current test returns. Some network tests can consume data or take time; review each test's on-page description before running a profile.
+
+**Technician mode** exposes a live raw diagnostic snapshot for troubleshooting. It may contain IP/network and device details; inspect and use the redacted export before sharing.
+
+**PWA support** adds a web app manifest, SVG icon, install prompt where supported, and a service worker that provides a small offline fallback page. The live PHP diagnostics and server-assisted checks still require a network connection. The worker is scoped to the application directory and does not cache diagnostic reports or API responses. HTTPS is required for service-worker installation in normal browser deployments (localhost is an exception).
