@@ -160,7 +160,7 @@ footer{border-top:1px solid var(--line);margin-top:26px;padding-top:15px;display
 .display-overlay{position:fixed;inset:0;z-index:99999;background:#000;display:flex;align-items:center;justify-content:center;color:#fff}.display-overlay .controls{position:fixed;bottom:18px;display:flex;gap:8px;align-items:center}.display-overlay button{background:#111;color:#fff;border:1px solid #888;padding:10px 14px;border-radius:8px}.display-overlay .pattern-label{position:fixed;top:18px;left:18px;background:#111b;padding:7px 10px;border-radius:6px;font-size:12px}.display-overlay.gradient{background:linear-gradient(90deg,#000,#fff)}.display-overlay.checker{background:conic-gradient(#fff 25%,#000 0 50%,#fff 0 75%,#000 0);background-size:80px 80px}\n.meter{height:14px;background:#171b23;border:1px solid var(--line);border-radius:20px;overflow:hidden;margin:14px 0}.meter span{display:block;width:0;height:100%;background:linear-gradient(90deg,#36b37e,#e3b341,#dc5555)}@media print{body{background:#fff;color:#111}.wrap{max-width:none;padding:0}.hero-card,.card,.metric{background:#fff;border:1px solid #bbb;color:#111;break-inside:avoid}.hero-card p,.subline,.kv .k,.fine,footer{color:#444}.tabs,.header-actions,.actions,.notice{display:none!important}.panel{display:block!important;break-before:page}.panel:first-of-type{break-before:auto}.ip-big{color:#111}.pill{color:#333}}
 
 .hardware-lab-note{color:var(--muted)}
-</style>
+.score-grid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}.score-value{font-size:clamp(1.7rem,3vw,2.5rem);font-weight:800;letter-spacing:-.04em;margin:12px 0 4px;color:var(--text)}.score-value.good{color:#35c58b}.score-value.warn{color:#e6b450}.score-value.bad{color:#f07878}.intel-item{padding:10px 0;border-bottom:1px solid var(--line)}.intel-item:last-child{border-bottom:0}</style>
 </head>
 <body>
 <div class="wrap">
@@ -175,6 +175,7 @@ footer{border-top:1px solid var(--line);margin-top:26px;padding-top:15px;display
 <div class="notice"><strong>Privacy & accuracy:</strong> This page does not request location, camera, microphone or motion access automatically. Those tests run only when you press their buttons. IP geolocation is approximate. Some browser APIs are unavailable by design. Forwarded-IP headers are not trusted as proof of your address.</div>
 <nav class="tabs" role="tablist" aria-label="Diagnostic sections">
  <button class="tab" role="tab" aria-selected="true" data-tab="overview">Overview</button>
+ <button class="tab" role="tab" aria-selected="false" data-tab="intelligence">Intelligence</button>
  <button class="tab" role="tab" aria-selected="false" data-tab="network">Network lab</button>
  <button class="tab" role="tab" aria-selected="false" data-tab="device">Device lab</button>
  <button class="tab" role="tab" aria-selected="false" data-tab="browser">Browser lab</button>
@@ -195,6 +196,7 @@ footer{border-top:1px solid var(--line);margin-top:26px;padding-top:15px;display
   <article class="card"><h3>Runtime capabilities</h3><div id="capabilityDetails" class="kv"></div></article>
  </div>
 </section>
+<section class="panel" id="intelligence"><div class="section-head"><div><h2>Diagnostic intelligence</h2><p>Evidence-based health indicators, prioritized findings and comparisons with locally saved reports. Unrun tests are not treated as passes.</p></div><div class="actions"><button class="btn primary" id="intelligenceRun">Analyze available results</button><button class="btn" id="intelligenceSave">Save diagnostic snapshot</button></div></div><div class="notice">Scores are provisional rule-based indicators, not certifications. Only domains with test evidence receive scores. Repeat tests under similar conditions before comparing sessions.</div><div class="grid score-grid" id="healthScores"><article class="card"><h3>Overall health</h3><div class="score-value" id="overallScore">Not assessed</div><p class="fine" id="overallCoverage">Run tests, then analyze.</p></article><article class="card"><h3>Network</h3><div class="score-value" id="scoreNetwork">—</div><p class="fine" id="coverageNetwork">Not assessed</p></article><article class="card"><h3>Hardware</h3><div class="score-value" id="scoreHardware">—</div><p class="fine" id="coverageHardware">Not assessed</p></article><article class="card"><h3>Performance</h3><div class="score-value" id="scorePerformance">—</div><p class="fine" id="coveragePerformance">Not assessed</p></article><article class="card"><h3>Privacy</h3><div class="score-value" id="scorePrivacy">—</div><p class="fine" id="coveragePrivacy">Not assessed</p></article><article class="card"><h3>Security</h3><div class="score-value" id="scoreSecurity">—</div><p class="fine" id="coverageSecurity">Not assessed</p></article></div><div class="grid"><article class="card"><h3>Prioritized findings</h3><div id="intelligenceFindings" class="result">No assessment generated.</div></article><article class="card"><h3>Recommended actions</h3><div id="intelligenceActions" class="result">Recommendations will appear here.</div></article></div><div class="grid"><article class="card"><h3>Diagnostic history</h3><div class="kv" id="intelligenceHistoryStats"></div><div class="actions"><button class="btn" id="intelligenceCompare">Compare with latest saved snapshot</button><button class="btn" id="intelligenceClear">Clear local history</button></div><div class="result" id="intelligenceHistory">History stays in this browser.</div></article><article class="card"><h3>Score trend</h3><div id="intelligenceTrend" class="result">Save at least two analyzed snapshots to compare trends.</div></article></div><p class="fine">Up to 10 snapshots are stored locally in this browser profile. No server database or external AI service is used.</p></section>
 <section class="panel" id="network">
  <div class="section-head"><div><h2>Network laboratory</h2><p>Connectivity, public address families, latency, DNS-over-HTTPS reachability and throughput.</p></div></div>
  <div class="grid">
@@ -307,7 +309,7 @@ footer{border-top:1px solid var(--line);margin-top:26px;padding-top:15px;display
  <article class="card"><h3>Keyboard & pointer tester</h3><p class="fine">Counts keys, pointer movement, clicks and scrolling; does not capture typed form contents.</p><div class="kv" id="inputStats"></div><button class="btn" data-trouble="reset">Reset counters</button></article>
  </div><div class="notice" style="margin-top:14px">Server-side checks originate from the hosting server and use a strict hostname allowlist. They do not reveal the visitor's local DNS resolver or full network path.</div>
 </section>
-<footer><span>Araha Device & Network Diagnostics · Runs in your browser</span><span>No database · No analytics · No diagnostic history is stored</span></footer>
+<footer><span>Araha Device & Network Diagnostics · Runs in your browser</span><span>No server-side history · Optional snapshots stay in this browser</span></footer>
 </div>
 <script>
 'use strict';
@@ -483,6 +485,54 @@ document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()
  window.addEventListener('pagehide',()=>{keyTest=false;pointerOn=false;});
 })();
 
+
+(function(){
+ const $=id=>document.getElementById(id), esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const domains={network:{label:'Network',e:0,p:0},hardware:{label:'Hardware',e:0,p:0},performance:{label:'Performance',e:0,p:0},privacy:{label:'Privacy',e:0,p:0},security:{label:'Security',e:0,p:0}}, findings=[];
+ function add(d,sev,title,detail,action,penalty){domains[d].e++;domains[d].p+=penalty||0;findings.push({d,sev,title,detail,action});}
+ function n(v){const x=parseFloat(v);return Number.isFinite(x)?x:null;}
+ function analyze(){
+  Object.values(domains).forEach(x=>{x.e=0;x.p=0;});findings.length=0;
+  const q=D.same_origin_quality||D.connection_quality, st=D.connection_stability, b=D.bufferbloat;
+  if(q){let x=n(q.average_ms??q.average_latency_ms);if(x!==null)add('network',x>500?'critical':x>250?'warning':'info','HTTP latency sample', 'Average '+x.toFixed(0)+' ms.','Retest on another network and inspect server distance/load.',x>500?25:x>250?14:0);x=n(q.mean_absolute_jitter_ms??q.jitter_ms);if(x!==null)add('network',x>80?'warning':'info','Timing variation','Mean absolute variation '+x.toFixed(1)+' ms.','Repeat with background traffic paused.',x>80?10:0);}
+  if(st){let x=n(st.loss_percent);if(x!==null)add('network',x>=10?'critical':x>0?'warning':'info','HTTP sample failures',x+'% failed requests.','Repeat; check endpoint access, Wi-Fi and captive portal. This is not ICMP packet loss.',x>=10?22:x>0?9:0);}
+  if(b&&n(b.latency_increase_ms)!==null){let x=n(b.latency_increase_ms);add('network',x>150?'critical':x>50?'warning':'info','Latency under load','Increase of '+x.toFixed(0)+' ms.','Check upload saturation and router QoS/SQM settings.',x>150?22:x>50?10:0);}
+  if(D.sustained_download)add('network','info','Sustained throughput',String(D.sustained_download.average_mbps??'Measured')+' Mbps average.','Compare repeat runs under similar conditions.');
+  if(D.hardware_keyboard)add('hardware','info','Keyboard rollover','Maximum simultaneous key events: '+D.hardware_keyboard.maximum_simultaneous+'.','Compare with the keyboard specification; browser focus affects results.');
+  if(D.pointer_event_test)add('hardware','info','Pointer event sample',String(D.pointer_event_test.events)+' pointer events.','This is browser event rate, not hardware polling rate.');
+  if(D.webgl?.supported!==undefined)add('hardware',D.webgl.supported?'info':'warning','WebGL capability',D.webgl.supported?'WebGL context created.':'WebGL context unavailable.','Check browser/driver support; privacy controls may restrict it.',D.webgl.supported?0:8);
+  if(D.memory_benchmark)add('hardware',D.memory_benchmark.error?'warning':'info','Temporary memory test',D.memory_benchmark.error||'24 MB temporary allocation succeeded.','Close memory-heavy tabs and repeat if allocation failed.',D.memory_benchmark.error?10:0);
+  if(D.cpu_benchmark)add('performance','info','CPU benchmark','Median round '+D.cpu_benchmark.median_ms+' ms.','Compare only on the same browser/device and similar power state.');
+  if(D.js_benchmark)add('performance','info','JavaScript benchmark','Elapsed '+D.js_benchmark.ms+' ms.','Repeat under similar conditions.');
+  if(D.dom_benchmark)add('performance','info','DOM benchmark','Total '+D.dom_benchmark.total_ms+' ms.','Compare only using the same benchmark version.');
+  if(D.indexeddb_benchmark)add('performance',D.indexeddb_benchmark.error?'warning':'info','IndexedDB test',D.indexeddb_benchmark.error||('Write '+D.indexeddb_benchmark.write_ms+' ms; read '+D.indexeddb_benchmark.read_ms+' ms.'),'Check browser storage settings if the test failed.',D.indexeddb_benchmark.error?8:0);
+  if(D.frame_cadence){let x=n(D.frame_cadence.average_fps);if(x!==null)add('performance',x<30?'warning':'info','Frame cadence',x.toFixed(1)+' FPS estimated.','Close heavy tabs and repeat; this is not physical panel refresh rate.',x<30?10:0);}
+  if(D.fingerprint_exposure)add('privacy',D.fingerprint_exposure.observable_signal_count>=13?'warning':'info','Fingerprint signal exposure',D.fingerprint_exposure.observable_signal_count+' observable categories.','Review privacy settings; this count does not measure uniqueness.',D.fingerprint_exposure.observable_signal_count>=13?7:0);
+  if(D.tracker_audit){let x=(D.tracker_audit.known_tracker_pattern_matches||[]).length;add('privacy',x?'warning':'info',x?'Tracker-like URL patterns matched':'No known tracker patterns matched',x+' URL(s) matched a small local heuristic list.','Review domains individually; matches are not proof of tracking.',x?7:0);}
+  const pol=D.response_policy_audit?.policies||D.response_security_headers;
+  if(pol){const checks=['content-security-policy','strict-transport-security','x-content-type-options','referrer-policy','permissions-policy'];const missing=checks.filter(k=>!pol[k]||/not present|not exposed/i.test(String(pol[k])));add('security',missing.length?'warning':'info','Response policy headers',missing.length?'Missing/not visible: '+missing.join(', '):'Selected policy headers were present.','Review policy directives and hosting/proxy configuration.',Math.min(25,missing.length*5));}
+  if(D.server_tls){const vals=Object.values(D.server_tls),bad=vals.filter(v=>!v.ok).length,soon=vals.filter(v=>v.ok&&n(v.days_until_expiry)!==null&&n(v.days_until_expiry)<30).length;add('security',bad||soon?'warning':'info','Server-side TLS inspection',bad+' failed check(s), '+soon+' certificate(s) nearing expiry.','Retry and verify the actual visitor-facing certificate.',bad*6+soon*12);}
+  if(D.server_dns)add('security','info','Hosting DNS checks','Server-side DNS queries completed.','These use the hosting resolver, not the visitor OS resolver.');
+  const assessed=Object.entries(domains).filter(([,v])=>v.e>0),overall=assessed.length?Math.round(assessed.reduce((a,[,v])=>a+Math.max(0,100-v.p),0)/assessed.length):null;
+  const result={generated_at:new Date().toISOString(),method:'Rule-based provisional indicators. Domain scores are shown only when relevant evidence exists.',overall_score:overall,assessed_domains:assessed.length,total_domains:5,coverage_percent:Math.round(assessed.length/5*100),domains:Object.fromEntries(Object.entries(domains).map(([k,v])=>[k,{label:v.label,score:v.e?Math.max(0,100-v.p):null,evidence_count:v.e}])),findings:findings.slice().sort((a,b)=>({critical:0,warning:1,info:2}[a.sev]-({critical:0,warning:1,info:2}[b.sev]))),recommendations:findings.filter(x=>x.sev!=='info').map(x=>({priority:x.sev,title:x.title,action:x.action,domain:x.d}))};
+  D.intelligence=result;render(result);return result;
+ }
+ function render(r){const cls=x=>x===null?'':x>=85?'good':x>=65?'warn':'bad';$('overallScore').textContent=r.overall_score===null?'Not assessed':r.overall_score+'/100';$('overallScore').className='score-value '+cls(r.overall_score);$('overallCoverage').textContent=r.assessed_domains+' of 5 domains assessed · '+r.coverage_percent+'% coverage';
+  Object.entries(r.domains).forEach(([k,v])=>{$('score'+k[0].toUpperCase()+k.slice(1)).textContent=v.score===null?'Not assessed':v.score+'/100';$('score'+k[0].toUpperCase()+k.slice(1)).className='score-value '+cls(v.score);$('coverage'+k[0].toUpperCase()+k.slice(1)).textContent=v.evidence_count+' evidence item(s)';});
+  $('intelligenceFindings').innerHTML=r.findings.length?r.findings.map(x=>'<div class="intel-item"><strong>'+esc(x.sev.toUpperCase()+' · '+x.title)+'</strong><div>'+esc(x.detail)+'</div><div class="intel-meta">'+esc(x.d)+' domain</div></div>').join(''):'No findings. Run more tests to increase coverage.';
+  $('intelligenceActions').innerHTML=r.recommendations.length?r.recommendations.map((x,i)=>'<div class="intel-item"><strong>'+esc((i+1)+'. '+x.title)+'</strong><div>'+esc(x.action)+'</div><div class="intel-meta">'+esc(x.priority)+' priority</div></div>').join(''):'No corrective actions suggested by current evidence.';
+  stats();trend();
+ }
+ function hist(){try{let h=JSON.parse(localStorage.getItem('araha_diag_history')||'[]');return Array.isArray(h)?h:[]}catch(e){return[]}}
+ function stats(){let h=hist();$('intelligenceHistoryStats').innerHTML='<div class="k">Saved snapshots</div><div class="v">'+h.length+' / 10</div><div class="k">Latest</div><div class="v">'+esc(h[0]?.saved_at||'None')+'</div><div class="k">Storage</div><div class="v">This browser only</div>';}
+ function trend(){let h=hist().filter(x=>x.report?.intelligence?.overall_score!==null&&x.report?.intelligence?.overall_score!==undefined).slice(0,8).reverse();$('intelligenceTrend').innerHTML=h.length<2?'Save at least two analyzed snapshots to compare trends.':h.map(x=>'<div class="intel-item"><strong>'+esc(new Date(x.saved_at).toLocaleString())+'</strong><div>Overall '+esc(x.report.intelligence.overall_score)+'/100 · Coverage '+esc(x.report.intelligence.coverage_percent)+'%</div></div>').join('');}
+ function compare(){let h=hist(),p=h[0]?.report?.intelligence,c=D.intelligence;if(!p||!c){$('intelligenceHistory').textContent='Save an analyzed snapshot, then analyze a new session.';return;}let delta=p.overall_score==null||c.overall_score==null?'Insufficient comparable data':((c.overall_score-p.overall_score)>0?'+':'')+(c.overall_score-p.overall_score)+' points';let rows=Object.entries(c.domains).map(([k,v])=>{let old=p.domains?.[k]?.score;return old==null||v.score==null?'':('<div class="intel-item"><strong>'+esc(v.label)+'</strong><div>'+old+' → '+v.score+' ('+((v.score-old)>0?'+':'')+(v.score-old)+')</div></div>')}).join('');$('intelligenceHistory').innerHTML='<div class="intel-item"><strong>Compared with '+esc(h[0].saved_at)+'</strong><div>Overall: '+esc(delta)+'</div></div>'+rows;}
+ $('intelligenceRun')?.addEventListener('click',analyze);
+ $('intelligenceSave')?.addEventListener('click',()=>{if(!D.intelligence)analyze();try{saveLocalReport();stats();trend();$('intelligenceHistory').textContent='Snapshot saved locally in this browser.'}catch(e){$('intelligenceHistory').textContent='Save failed: '+e.message}});
+ $('intelligenceCompare')?.addEventListener('click',compare);
+ $('intelligenceClear')?.addEventListener('click',()=>{if(!confirm('Clear all locally saved diagnostic snapshots from this browser?'))return;localStorage.removeItem('araha_diag_history');stats();trend();$('intelligenceHistory').textContent='Local history cleared.'});
+ stats();trend();
+})();
 </script>
 </body>
 </html>
