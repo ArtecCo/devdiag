@@ -23,7 +23,7 @@ No database, Composer packages, npm packages, build step, cron job or background
 4. Visit the site over HTTPS.
 5. Test the page on desktop and mobile browsers. Check the browser console and PHP error log if a feature is unavailable.
 
-The upload test posts up to 4 MB to the same PHP endpoint. PHP's `post_max_size` must be at least 5 MB (8 MB or higher is suitable). The endpoint measures the request in memory and does not write the payload to disk.
+The standard upload test posts up to 4 MB to the same PHP endpoint. The loaded-latency test uses an additional 1 MB upload and a 6 MB third-party download. PHP's `post_max_size` must be at least 5 MB (8 MB or higher is suitable). The endpoint measures request bodies in memory and does not write them to disk.
 
 ## Included diagnostics
 
@@ -39,6 +39,8 @@ The upload test posts up to 4 MB to the same PHP endpoint. PHP's `post_max_size`
 - Keyboard, pointer, wheel and touch counters; gamepad sampling; display visual patterns; opt-in audio tone tests.
 - Opt-in camera/microphone preview, GPS and motion/sensor sampling.
 - Repeated HTTP timing samples for approximate stability/jitter/loss indicators, independent public-IP comparison, response security-header inspection and accessibility/environment signals.
+- Troubleshooting lab: 30-sample same-origin latency chart, concurrent upload/download loaded-latency (bufferbloat indicator), hosting-server DNS A/AAAA/MX lookups, TLS certificate validity/expiry inspection, and server-side HTTP/DNS/TCP/TLS/TTFB timing for a fixed hostname allowlist.
+- Troubleshooting lab also includes browser resource-security indicators, animation-frame cadence estimation, a local microphone level meter, left/right speaker tones, frequency sweep, and keyboard/pointer counters.
 - JSON and CSV export, redacted JSON export, copy report, optional local report history/comparison and print-to-PDF through the browser.
 
 ## Privacy and limitations
@@ -54,7 +56,10 @@ The upload test posts up to 4 MB to the same PHP endpoint. PHP's `post_max_size`
 - WebRTC may reveal local or public network candidates to the page and the configured STUN service. The test is deliberately opt-in.
 - Upload/download tests consume data. Upload tests are capped at 4 MB in the UI and 8 MB at the endpoint.
 - HTTP stability results are not ICMP packet loss or standardized jitter. Provider comparison and VPN/proxy interpretation are heuristic.
-- Security-header inspection sees only headers exposed for this page response. TLS certificate-chain inspection, full HTTP/3 negotiation testing, path-MTU discovery, OS-level DNS leak tests, captive-portal certainty, and physical screen/audio hardware validation need capabilities or services beyond a normal browser page and are not claimed as implemented.
+- Server-assisted DNS/TLS/HTTP checks originate from the web host, not the visitor's device. DNS uses the host's configured resolver; TLS inspection checks the peer certificate presented to the PHP host and does not enumerate the full certificate chain. HTTP protocol reporting depends on the host's cURL/libcurl build. The fixed target allowlist is intentional and prevents arbitrary-host probing.
+- The bufferbloat indicator measures same-origin HTTP request latency while a controlled download and upload run concurrently. It is not a standardized bufferbloat score; server load, hosting limits, CORS, endpoint availability and browser scheduling affect it.
+- Resource inspection can only report resources visible through the browser Performance API. Frame cadence is an animation-frame estimate, not a direct display refresh-rate measurement. Microphone level analysis is local and does not record or upload audio; channel tones require the visitor to listen and assess the physical output.
+- Full HTTP/3 negotiation testing, path-MTU discovery, OS-level DNS leak tests, captive-portal certainty, and physical screen/audio hardware validation need capabilities or services beyond a normal browser page and are not claimed as implemented.
 - Local report history remains on the current browser profile; it is not synchronized between devices. Redacted exports should still be reviewed before sharing.
 - Results are diagnostic hints, not a security audit, device identity proof, speed guarantee or forensic report.
 
