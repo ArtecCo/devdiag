@@ -100,3 +100,12 @@ Profiles execute their tests sequentially and show progress. Stop requests take 
 **Technician mode** exposes a live raw diagnostic snapshot for troubleshooting. It may contain IP/network and device details; inspect and use the redacted export before sharing.
 
 **PWA support** adds a web app manifest, SVG icon, install prompt where supported, and a service worker that provides a small offline fallback page. The live PHP diagnostics and server-assisted checks still require a network connection. The worker is scoped to the application directory and does not cache diagnostic reports or API responses. HTTPS is required for service-worker installation in normal browser deployments (localhost is an exception).
+
+## Appearance and PDF reports
+
+- The header theme control switches between dark and light appearance. The selected theme is stored locally in the current browser profile.
+- Card spacing, padding, grid gaps and mobile spacing have been refined for easier scanning.
+- **Download PDF** submits the current in-page diagnostic object to the same PHP application and receives a generated, styled, paginated PDF attachment. The PDF is constructed server-side without Composer, external PDF services, browser print dialogs or a third-party library.
+- The PDF includes data collected so far in the current session. Tests that have not been run remain absent; permission-sensitive checks are never triggered by PDF generation.
+- The PDF endpoint accepts a bounded JSON report (maximum 512 KB), creates the file in memory and does not save it on the server. Review the report before sharing because it may include IP, network, browser and device information.
+
