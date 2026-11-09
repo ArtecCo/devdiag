@@ -85,7 +85,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_GET['action'] ?? '') 
         } else {
             $value = preg_replace('/[^\\x20-\\x7E]/', '?', $value) ?? '';
         }
-        return str_replace(["\\\\", "(", ")", "\\r", "\\n"], ["\\\\\\\\", "\\\\(", "\\\\)", ' ', ' '], $value);
+        return str_replace(["\\", "(", ")", "\r", "\n"], ["\\\\", "\\(", "\\)", ' ', ' '], $value);
     };
     $display = static function ($value): string {
         if (is_array($value) || is_object($value)) return json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE) ?: '[complex value]';
@@ -125,7 +125,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_GET['action'] ?? '') 
         $parts = explode("\\n", wordwrap((string)$line['text'], 94, "\\n", true));
         foreach ($parts as $part) $wrapped[] = ['kind' => $line['kind'], 'text' => $part];
     }
-    $pages = array_chunk($wrapped, 48);
+    $pages = array_chunk($wrapped, 24);
     $objects = [];
     $objects[1] = '<< /Type /Catalog /Pages 2 0 R >>';
     $objects[3] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';
