@@ -43,6 +43,12 @@ The standard upload test posts up to 4 MB to the same PHP endpoint. The loaded-l
 - Troubleshooting lab also includes browser resource-security indicators, animation-frame cadence estimation, a local microphone level meter, left/right speaker tones, frequency sweep, and keyboard/pointer counters.
 - JSON and CSV export, redacted JSON export, copy report, optional local report history/comparison and print-to-PDF through the browser.
 
+
+- Hardware lab additions: opt-in keyboard rollover/key-code test, pointer event-rate estimate, and guided display inspection entry point. Pointer event rate is not a hardware polling-rate measurement; physical display defects require visual inspection.
+- Privacy lab additions: browser fingerprint signal exposure summary (not a uniqueness score), heuristic third-party tracker pattern audit of resources already loaded by this page, and same-origin response policy/header audit.
+- Performance lab additions: repeated JavaScript CPU microbenchmark, bounded 24 MB temporary allocation/read test, temporary 1 MB IndexedDB read/write benchmark with database cleanup, and bounded DOM create/query/remove benchmark.
+- These additional tests run only after the visitor activates their controls. They do not upload their test payloads. Benchmark results are browser/session dependent and should not be treated as standardized device scores.
+
 ## Privacy and limitations
 
 - Diagnostic data is assembled in the visitor's browser. There is no database, analytics service or account system. Optional report history is saved only in the visitor's local browser storage after the visitor explicitly saves it (up to 10 reports).
