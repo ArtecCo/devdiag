@@ -30,6 +30,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_GET['action'] ?? '') === 'upload
     json_response(['ok' => true, 'bytes' => strlen($body), 'received_at' => gmdate('c')]);
 }
 
+
+$diagHosts = ['cloudflare.com','google.com','github.com','microsoft.com','ip.araha.co.in'];
+if (isset($_GET['action']) && in_array((string)$_GET['action'], ['probe','network-check'], true)) {
+ if ($_GET['action']==='probe') json_response(['ok'=>true,'time'=>gmdate('c')]);
+ $host=strtolower(trim((string)($_GET['target']??''))); $kind=(string)($_GET['kind']??'');
+ if(!in_array($host,$diagHosts,true)) json_response(['ok'=>false,'error'=>'Target not allowed'],400);
+ $t=microtime(true);
+ if($kind==='dns'){
+  $records=[]; foreach([DNS_A=>'A',DNS_AAAA=>'AAAA',DNS_MX=>'MX'] as $type=>$label){$rr=@dns_get_record($host,$type);$records[$label]=is_array($rr)?array_slice(array_map(static fn($v)=>array_intersect_key($v,array_flip(['ip','ipv6','target','pri'])),$rr),0,10):[];}
+  json_response(['ok'=>true,'host'=>$host,'resolver'=>'Hosting server resolver, not visitor device','elapsed_ms'=>round((microtime(true)-$t)*1000,1),'records'=>$records]);
+ }
+ if($kind==='tls'){
+  if(!extension_loaded('openssl'))json_response(['ok'=>false,'error'=>'OpenSSL unavailable'],503);
+  $ctx=stream_context_create(['ssl'=>['capture_peer_cert'=>true,'verify_peer'=>true,'verify_peer_name'=>true,'peer_name'=>$host,'SNI_enabled'=>true]]);
+  $s=@stream_socket_client('ssl://'.$host.':443',$errno,$errstr,7,STREAM_CLIENT_CONNECT,$ctx);
+  if(!$s)json_response(['ok'=>false,'error'=>$errstr?:'TLS failed'],502);
+  $p=stream_context_get_params($s);fclose($s);$x=openssl_x509_parse($p['options']['ssl']['peer_certificate']??'');
+  if(!$x)json_response(['ok'=>false,'error'=>'Certificate parse failed'],502);
+  $to=(int)($x['validTo_time_t']??0);
+  json_response(['ok'=>true,'host'=>$host,'verified'=>true,'subject'=>$x['subject']['CN']??null,'issuer'=>$x['issuer']['CN']??($x['issuer']['O']??null),'valid_from'=>isset($x['validFrom_time_t'])?gmdate('c',(int)$x['validFrom_time_t']):null,'valid_to'=>$to?gmdate('c',$to):null,'days_until_expiry'=>$to?(int)floor(($to-time())/86400):null,'san'=>$x['extensions']['subjectAltName']??null]);
+ }
+ if($kind==='http'){
+  if(!function_exists('curl_init'))json_response(['ok'=>false,'error'=>'cURL unavailable'],503);
+  $ch=curl_init('https://'.$host.'/');curl_setopt_array($ch,[CURLOPT_NOBODY=>true,CURLOPT_RETURNTRANSFER=>true,CURLOPT_FOLLOWLOCATION=>false,CURLOPT_CONNECTTIMEOUT=>4,CURLOPT_TIMEOUT=>8,CURLOPT_SSL_VERIFYPEER=>true,CURLOPT_SSL_VERIFYHOST=>2]);curl_exec($ch);$err=curl_error($ch);$no=curl_errno($ch);$i=curl_getinfo($ch);curl_close($ch);
+  if($no)json_response(['ok'=>false,'error'=>$err],502);
+  $v=$i['http_version']??0;$labels=[CURL_HTTP_VERSION_1_0=>'HTTP/1.0',CURL_HTTP_VERSION_1_1=>'HTTP/1.1',CURL_HTTP_VERSION_2_0=>'HTTP/2'];
+  json_response(['ok'=>true,'host'=>$host,'status'=>$i['http_code']??null,'protocol'=>$labels[$v]??'Unknown','dns_ms'=>round(($i['namelookup_time']??0)*1000,1),'tcp_ms'=>round(($i['connect_time']??0)*1000,1),'tls_ms'=>round(max(0,(($i['appconnect_time']??0)-($i['connect_time']??0))*1000),1),'ttfb_ms'=>round(($i['starttransfer_time']??0)*1000,1),'total_ms'=>round(($i['total_time']??0)*1000,1)]);
+ }
+ json_response(['ok'=>false,'error'=>'Unknown check'],400);
+}
+
 $ip = (string)($_SERVER['REMOTE_ADDR'] ?? '');
 $ipValid = filter_var($ip, FILTER_VALIDATE_IP) !== false;
 $ipInfo = null;
@@ -126,7 +157,7 @@ header{display:flex;justify-content:space-between;align-items:center;gap:18px;ma
 footer{border-top:1px solid var(--line);margin-top:26px;padding-top:15px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:11px}
 @media(max-width:1000px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.summary-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:680px){.wrap{padding:17px 13px 40px}header{align-items:flex-start;flex-direction:column}.hero{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.summary-grid{grid-template-columns:repeat(2,1fr)}.section-head{align-items:flex-start;flex-direction:column}.kv{grid-template-columns:1fr 1.2fr}}
-.display-overlay{position:fixed;inset:0;z-index:99999;background:#000;display:flex;align-items:center;justify-content:center;color:#fff}.display-overlay .controls{position:fixed;bottom:18px;display:flex;gap:8px;align-items:center}.display-overlay button{background:#111;color:#fff;border:1px solid #888;padding:10px 14px;border-radius:8px}.display-overlay .pattern-label{position:fixed;top:18px;left:18px;background:#111b;padding:7px 10px;border-radius:6px;font-size:12px}.display-overlay.gradient{background:linear-gradient(90deg,#000,#fff)}.display-overlay.checker{background:conic-gradient(#fff 25%,#000 0 50%,#fff 0 75%,#000 0);background-size:80px 80px}\n@media print{body{background:#fff;color:#111}.wrap{max-width:none;padding:0}.hero-card,.card,.metric{background:#fff;border:1px solid #bbb;color:#111;break-inside:avoid}.hero-card p,.subline,.kv .k,.fine,footer{color:#444}.tabs,.header-actions,.actions,.notice{display:none!important}.panel{display:block!important;break-before:page}.panel:first-of-type{break-before:auto}.ip-big{color:#111}.pill{color:#333}}
+.display-overlay{position:fixed;inset:0;z-index:99999;background:#000;display:flex;align-items:center;justify-content:center;color:#fff}.display-overlay .controls{position:fixed;bottom:18px;display:flex;gap:8px;align-items:center}.display-overlay button{background:#111;color:#fff;border:1px solid #888;padding:10px 14px;border-radius:8px}.display-overlay .pattern-label{position:fixed;top:18px;left:18px;background:#111b;padding:7px 10px;border-radius:6px;font-size:12px}.display-overlay.gradient{background:linear-gradient(90deg,#000,#fff)}.display-overlay.checker{background:conic-gradient(#fff 25%,#000 0 50%,#fff 0 75%,#000 0);background-size:80px 80px}\n.meter{height:14px;background:#171b23;border:1px solid var(--line);border-radius:20px;overflow:hidden;margin:14px 0}.meter span{display:block;width:0;height:100%;background:linear-gradient(90deg,#36b37e,#e3b341,#dc5555)}@media print{body{background:#fff;color:#111}.wrap{max-width:none;padding:0}.hero-card,.card,.metric{background:#fff;border:1px solid #bbb;color:#111;break-inside:avoid}.hero-card p,.subline,.kv .k,.fine,footer{color:#444}.tabs,.header-actions,.actions,.notice{display:none!important}.panel{display:block!important;break-before:page}.panel:first-of-type{break-before:auto}.ip-big{color:#111}.pill{color:#333}}
 </style>
 </head>
 <body>
@@ -149,6 +180,7 @@ footer{border-top:1px solid var(--line);margin-top:26px;padding-top:15px;display
  <button class="tab" role="tab" aria-selected="false" data-tab="performance">Performance lab</button>
  <button class="tab" role="tab" aria-selected="false" data-tab="location">Location & sensors</button>
  <button class="tab" role="tab" aria-selected="false" data-tab="advanced">Extended tests</button>
+ <button class="tab" role="tab" aria-selected="false" data-tab="troubleshoot">Troubleshooting</button>
 </nav>
 <section class="panel active" id="overview">
  <div class="section-head"><div><h2>Diagnostic overview</h2><p>Collected automatically where browser permissions and platform support allow.</p></div></div>
@@ -246,6 +278,21 @@ footer{border-top:1px solid var(--line);margin-top:26px;padding-top:15px;display
  <div class="notice" style="margin-top:14px">Important: browser APIs cannot reliably reveal the Wi-Fi SSID, MAC address, serial number, exact hardware model, OS-level DNS configuration, router details, full certificate chain or physical display defects. VPN/proxy classification is heuristic. TLS certificate inspection and full HTTP/3 verification require a dedicated external diagnostic service or server-side network tooling.</div>
 </section>
 
+<section class="panel" id="troubleshoot">
+ <div class="section-head"><div><h2>Network & hardware troubleshooting</h2><p>Connection quality, loaded latency, server-side DNS/TLS/HTTP inspection and practical input/audio tests.</p></div></div>
+ <div class="grid">
+ <article class="card"><h3>Connection quality</h3><p class="fine">30 same-origin HTTP round trips. Not ICMP ping.</p><div class="kv" id="qStats"></div><canvas id="qChart" height="100" style="width:100%;height:110px"></canvas><div class="actions"><button class="btn" data-trouble="quality">Run 30 samples</button></div></article>
+ <article class="card"><h3>Bufferbloat / latency under load</h3><p class="fine">Compares idle and loaded HTTP latency while upload/download run concurrently. Uses data; indicative, not standardized.</p><div class="kv" id="bStats"></div><button class="btn" data-trouble="buffer">Run loaded-latency test</button><div class="result" id="bResult"></div></article>
+ <article class="card"><h3>DNS resolver diagnostics</h3><p class="fine">A, AAAA and MX queries using hosting server resolver, not the visitor's OS resolver.</p><div class="kv" id="dnsStats"></div><button class="btn" data-trouble="dns">Run DNS checks</button><div class="result" id="dnsResult"></div></article>
+ <article class="card"><h3>TLS certificate inspection</h3><p class="fine">Trust, issuer, validity and expiry from the hosting server to known targets.</p><div class="kv" id="tlsStats"></div><button class="btn" data-trouble="tls">Inspect certificates</button><div class="result" id="tlsResult"></div></article>
+ <article class="card"><h3>HTTP connection timing</h3><p class="fine">Server-side DNS, TCP, TLS, TTFB and negotiated protocol where cURL supports it.</p><div class="kv" id="httpStats"></div><button class="btn" data-trouble="http">Inspect HTTP connections</button><div class="result" id="httpResult"></div></article>
+ <article class="card"><h3>Loaded resource security</h3><div class="kv" id="resourceStats"></div><button class="btn" data-trouble="resources">Inspect resources</button></article>
+ <article class="card"><h3>Display frame cadence</h3><p class="fine">Estimates requestAnimationFrame cadence, not direct panel refresh rate.</p><div class="kv" id="frameStats"></div><button class="btn" data-trouble="frames">Estimate cadence</button></article>
+ <article class="card"><h3>Microphone level meter</h3><p class="fine">Permission is requested only after start. Local analysis; no recording/upload.</p><div class="meter"><span id="micLevel"></span></div><button class="btn" data-trouble="micstart">Start meter</button><button class="btn" data-trouble="micstop">Stop</button><div class="result" id="micState">Not started.</div></article>
+ <article class="card"><h3>Speaker channel tests</h3><p class="fine">Check volume before playing tones.</p><button class="btn" data-trouble="left">Left channel</button><button class="btn" data-trouble="right">Right channel</button><button class="btn" data-trouble="sweep">Frequency sweep</button><div class="result" id="speakerState"></div></article>
+ <article class="card"><h3>Keyboard & pointer tester</h3><p class="fine">Counts keys, pointer movement, clicks and scrolling; does not capture typed form contents.</p><div class="kv" id="inputStats"></div><button class="btn" data-trouble="reset">Reset counters</button></article>
+ </div><div class="notice" style="margin-top:14px">Server-side checks originate from the hosting server and use a strict hostname allowlist. They do not reveal the visitor's local DNS resolver or full network path.</div>
+</section>
 <footer><span>Araha Device & Network Diagnostics · Runs in your browser</span><span>No database · No analytics · No diagnostic history is stored</span></footer>
 </div>
 <script>
@@ -363,6 +410,25 @@ $('copyBtn').addEventListener('click',async()=>{try{await navigator.clipboard.wr
 $('jsonBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(D,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='araha-diagnostics-'+new Date().toISOString().replace(/[:.]/g,'-')+'.json';a.click();URL.revokeObjectURL(a.href);});
 window.addEventListener('online',()=>{$('onlinePill').textContent='Browser reports online';});window.addEventListener('offline',()=>{$('onlinePill').textContent='Browser reports offline';});
 init();
+
+let micS=null,micC=null,micR=0,keyT={n:0,last:'—',codes:[]},ptrT={move:0,click:0,wheel:0,x:'—',y:'—'};
+const probe=async()=>{const r=await fetch(location.pathname+'?action=probe&t='+Date.now(),{cache:'no-store',signal:AbortSignal.timeout(5000)});if(!r.ok)throw Error('HTTP '+r.status);return r.json();};
+function kv(id,o){const e=$(id);if(e)e.innerHTML=Object.entries(o).map(([k,v])=>'<div class="k">'+esc(k)+'</div><div class="v">'+esc(typeof v==='object'?JSON.stringify(v):String(v??'—'))+'</div>').join('');}
+function chartQ(a){const c=$('qChart');if(!c)return;const w=c.clientWidth||500,h=100,d=devicePixelRatio||1;c.width=w*d;c.height=h*d;const x=c.getContext('2d');x.scale(d,d);x.clearRect(0,0,w,h);if(!a.length)return;const max=Math.max(50,...a)*1.1;x.strokeStyle='#58a6ff';x.lineWidth=2;x.beginPath();a.forEach((v,i)=>{const px=i*w/Math.max(1,a.length-1),py=h-v/max*h;i?x.lineTo(px,py):x.moveTo(px,py);});x.stroke();}
+async function quality(){const a=[];for(let i=0;i<30;i++){const t=performance.now();try{await probe();a.push(performance.now()-t);}catch(e){}chartQ(a);await new Promise(r=>setTimeout(r,180));}const s=[...a].sort((x,y)=>x-y),avg=a.reduce((x,y)=>x+y,0)/(a.length||1),jit=a.length>1?a.slice(1).reduce((z,v,i)=>z+Math.abs(v-a[i]),0)/(a.length-1):0,o={samples:a.length,average_ms:+avg.toFixed(1),median_ms:+(s[Math.floor(s.length/2)]||0).toFixed(1),p95_ms:+(s[Math.min(s.length-1,Math.ceil(s.length*.95)-1)]||0).toFixed(1),mean_absolute_jitter_ms:+jit.toFixed(1)};D.same_origin_quality=o;kv('qStats',o);}
+async function serverCheck(kind){const hosts=['cloudflare.com','google.com','github.com','microsoft.com','ip.araha.co.in'],out={};for(const h of hosts){try{const r=await fetch(location.pathname+'?action=network-check&kind='+kind+'&target='+h,{cache:'no-store',signal:AbortSignal.timeout(12000)});out[h]=await r.json();}catch(e){out[h]={ok:false,error:e.message};}}D['server_'+kind]=out;const id=kind==='dns'?'dnsStats':kind==='tls'?'tlsStats':'httpStats',summary={};for(const [h,v] of Object.entries(out))summary[h]=!v.ok?(v.error||'Failed'):kind==='dns'?v.elapsed_ms+' ms':kind==='tls'?v.days_until_expiry+' days left':v.protocol+' · '+v.total_ms+' ms';kv(id,summary);$(''+kind+'Result').textContent=JSON.stringify(out,null,2);}
+async function bufferTest(){const measure=async n=>{const a=[];for(let i=0;i<n;i++){const t=performance.now();try{await probe();a.push(performance.now()-t);}catch(e){}await new Promise(r=>setTimeout(r,100));}return a;},avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;const idle=await measure(8);if(!idle.length)throw Error('Same-origin probe unavailable');const dl=fetch('https://speed.cloudflare.com/__down?bytes=6000000&b='+Date.now(),{cache:'no-store',signal:AbortSignal.timeout(30000)}).then(r=>r.arrayBuffer()),ul=fetch(location.pathname+'?action=upload-test',{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:new Uint8Array(1024*1024),signal:AbortSignal.timeout(30000)}).then(async r=>{const j=await r.json();if(!r.ok||!j.ok)throw Error(j.error||'Upload failed');return j.bytes;}),lp=measure(12),z=await Promise.allSettled([dl,ul,lp]),loaded=z[2].status==='fulfilled'?z[2].value:[],o={idle_average_ms:+avg(idle).toFixed(1),loaded_average_ms:avg(loaded)===null?null:+avg(loaded).toFixed(1),latency_increase_ms:avg(loaded)===null?null:+(avg(loaded)-avg(idle)).toFixed(1),download_bytes:z[0].status==='fulfilled'?z[0].value.byteLength:z[0].reason.message,upload_bytes:z[1].status==='fulfilled'?z[1].value:z[1].reason.message};D.bufferbloat=o;kv('bStats',o);$('bResult').textContent='Indicative only. Increased latency under load may suggest queueing; not a standardized grade.';}
+function resources(){const e=performance.getEntriesByType('resource'),mixed=e.filter(x=>location.protocol==='https:'&&x.name.startsWith('http:')).map(x=>x.name),third=[...new Set(e.map(x=>{try{return new URL(x.name).origin;}catch{return'';}}).filter(x=>x&&x!==location.origin))],o={resource_entries:e.length,mixed_content_urls:mixed,third_party_origins:third,secure_context:isSecureContext,cross_origin_isolated:crossOriginIsolated};D.loaded_resource_security=o;kv('resourceStats',{Resources:e.length,Mixed_content:mixed.length?mixed.join(', '):'None',Third_party_origins:third.join(', ')||'None',Secure_context:isSecureContext,Cross_origin_isolated:crossOriginIsolated});}
+async function frames(){const a=[];let last=0;await new Promise(done=>{const start=performance.now();function f(t){if(last)a.push(t-last);last=t;if(t-start<2000)requestAnimationFrame(f);else done();}requestAnimationFrame(f);});const avg=a.reduce((x,y)=>x+y,0)/(a.length||1),o={frames:a.length,estimated_fps:+(1000/avg).toFixed(1),average_interval_ms:+avg.toFixed(2),note:'Browser frame cadence, not direct panel refresh rate'};D.display_frame_cadence=o;kv('frameStats',o);}
+async function micStart(){try{micS=await navigator.mediaDevices.getUserMedia({audio:true});micC=new (AudioContext||webkitAudioContext)();const src=micC.createMediaStreamSource(micS),an=micC.createAnalyser();an.fftSize=1024;src.connect(an);const data=new Uint8Array(an.fftSize);function draw(){an.getByteTimeDomainData(data);let s=0;for(const v of data)s+=((v-128)/128)**2;$('micLevel').style.width=Math.min(100,Math.round(Math.sqrt(s/data.length)*280))+'%';micR=requestAnimationFrame(draw);}draw();$('micState').textContent='Active; local level meter only.';}catch(e){$('micState').textContent=e.name+': '+e.message;}}
+function micStop(){if(micR)cancelAnimationFrame(micR);micR=0;if(micS)micS.getTracks().forEach(t=>t.stop());micS=null;if(micC)micC.close();micC=null;if($('micLevel'))$('micLevel').style.width='0%';if($('micState'))$('micState').textContent='Stopped.';}
+function channel(ch){const C=window.AudioContext||window.webkitAudioContext;if(!C){$('speakerState').textContent='Web Audio unsupported';return;}const ctx=new C(),o=ctx.createOscillator(),g=ctx.createGain(),m=ctx.createChannelMerger(2);o.frequency.value=440;g.gain.value=.06;o.connect(g);g.connect(m,0,ch==='left'?0:1);m.connect(ctx.destination);o.start();o.stop(ctx.currentTime+.45);o.onended=()=>ctx.close();$('speakerState').textContent='Playing '+ch+' channel.';}
+function inputRender(){kv('inputStats',{Key_events:keyT.n,Last_key:keyT.last,Recent_codes:keyT.codes.slice(-10).join(', '),Pointer_moves:ptrT.move,Clicks:ptrT.click,Wheel_events:ptrT.wheel,Last_position:ptrT.x+', '+ptrT.y});}
+window.addEventListener('keydown',e=>{if(e.target.matches('input,textarea,[contenteditable=true]'))return;keyT.n++;keyT.last=e.key;keyT.codes.push(e.code);inputRender();});window.addEventListener('pointermove',e=>{ptrT.move++;ptrT.x=e.clientX;ptrT.y=e.clientY;inputRender();},{passive:true});window.addEventListener('click',()=>{ptrT.click++;inputRender();},{passive:true});window.addEventListener('wheel',()=>{ptrT.wheel++;inputRender();},{passive:true});
+const trouble={quality,buffer:bufferTest,dns:()=>serverCheck('dns'),tls:()=>serverCheck('tls'),http:()=>serverCheck('http'),resources,frames,micstart:micStart,micstop:micStop,left:()=>channel('left'),right:()=>channel('right'),sweep:()=>playTone(true),reset:()=>{keyT={n:0,last:'—',codes:[]};ptrT={move:0,click:0,wheel:0,x:'—',y:'—'};inputRender();}};
+document.querySelectorAll('[data-trouble]').forEach(b=>b.addEventListener('click',async()=>{b.disabled=true;try{await trouble[b.dataset.trouble]();}catch(e){console.error(e);if($('bResult'))$('bResult').textContent=e.message;}finally{b.disabled=false;}}));
+document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.tab!=='troubleshoot')micStop();}));window.addEventListener('pagehide',micStop);
+
 </script>
 </body>
 </html>
