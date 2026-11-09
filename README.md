@@ -8,7 +8,7 @@ A single-file PHP diagnostics page for `ip.araha.co.in`. The application combine
 
 ## Requirements
 
-- PHP 8.0 or newer (PHP 8.1+ recommended).
+- PHP 8.1 or newer (PHP 8.2+ recommended).
 - PHP cURL extension enabled for IP intelligence lookup.
 - HTTPS strongly recommended. Geolocation, clipboard, battery and several device APIs require a secure context.
 - Modern browser with JavaScript enabled.
