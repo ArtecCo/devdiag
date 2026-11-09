@@ -39,7 +39,7 @@ The standard upload test posts up to 4 MB to the same PHP endpoint. The loaded-l
 - Keyboard, pointer, wheel and touch counters; gamepad sampling; display visual patterns; opt-in audio tone tests.
 - Opt-in camera/microphone preview, GPS and motion/sensor sampling.
 - Repeated HTTP timing samples for approximate stability/jitter/loss indicators, independent public-IP comparison, response security-header inspection and accessibility/environment signals.
-- Troubleshooting lab: 30-sample same-origin latency chart, concurrent upload/download loaded-latency (bufferbloat indicator), hosting-server DNS A/AAAA/MX lookups, TLS certificate validity/expiry inspection, and server-side HTTP/DNS/TCP/TLS/TTFB timing for a fixed hostname allowlist.
+- Troubleshooting lab: 30-sample same-origin latency chart, concurrent upload/download loaded-latency (bufferbloat indicator), bounded sustained download throughput, hosting-server DNS A/AAAA/MX lookups, TLS certificate validity/expiry inspection, server-side HTTP/DNS/TCP/TLS/TTFB timing for a fixed hostname allowlist, and an automatic findings/recommendations summary.
 - Troubleshooting lab also includes browser resource-security indicators, animation-frame cadence estimation, a local microphone level meter, left/right speaker tones, frequency sweep, and keyboard/pointer counters.
 - JSON and CSV export, redacted JSON export, copy report, optional local report history/comparison and print-to-PDF through the browser.
 
