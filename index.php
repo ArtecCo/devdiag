@@ -22,14 +22,14 @@ function json_response(array $data, int $status = 200): never {
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && ($_GET['action'] ?? '') === 'pwa-manifest') {
  header('Content-Type: application/manifest+json; charset=utf-8'); header('Cache-Control: public, max-age=3600');
- echo json_encode(['name'=>'Araha Device & Network Diagnostics','short_name'=>'Araha Diagnostics','description'=>'Local-first device, browser, network and privacy diagnostics.','start_url'=>'./','scope'=>'./','display'=>'standalone','background_color'=>'#080a0e','theme_color'=>'#080a0e','icons'=>[['src'=>'data:image/svg+xml,'.rawurlencode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="96" fill="#080a0e"/><path d="M256 72 430 390H82Z" fill="none" stroke="#69d3c1" stroke-width="34" stroke-linejoin="round"/><path d="M180 310h152" stroke="#69d3c1" stroke-width="30" stroke-linecap="round"/></svg>'),'sizes'=>'any','type'=>'image/svg+xml','purpose'=>'any maskable']]],JSON_UNESCAPED_SLASHES); exit;
+ echo json_encode(['name'=>'Araha Device & Network Diagnostics','short_name'=>'Araha Diagnostics','description'=>'Local-first device, browser, network and privacy diagnostics.','start_url'=>'./','scope'=>'./','display'=>'standalone','background_color'=>'#080a0e','theme_color'=>'#080a0e','icons'=>[['src'=>'icon.svg','sizes'=>'any','type'=>'image/svg+xml','purpose'=>'any maskable']]],JSON_UNESCAPED_SLASHES); exit;
 }
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && ($_GET['action'] ?? '') === 'service-worker') {
- header('Content-Type: application/javascript; charset=utf-8'); header('Service-Worker-Allowed: /'); header('Cache-Control: no-cache');
+ header('Content-Type: application/javascript; charset=utf-8'); header('Service-Worker-Allowed: ' . rtrim(str_replace('\\\\', '/', dirname((string)($_SERVER['SCRIPT_NAME'] ?? '/'))), '/') . '/'); header('Cache-Control: no-cache');
  echo <<<'JS'
-const CACHE='araha-diagnostics-shell-v1',OFFLINE='/__araha-diagnostics-offline.html';
+const CACHE='araha-diagnostics-shell-v1',OFFLINE=new URL('./__araha-diagnostics-offline.html',self.registration.scope).pathname;
 self.addEventListener('install',e=>e.waitUntil((async()=>{const c=await caches.open(CACHE);await c.put(OFFLINE,new Response('<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Araha Diagnostics · Offline</title><style>body{margin:0;background:#080a0e;color:#e8edf4;font:16px system-ui;min-height:100vh;display:grid;place-items:center}main{max-width:560px;padding:32px;border:1px solid #252e3a;border-radius:16px;background:#10141b}h1{color:#69d3c1}p{color:#91a0b2}.profile-grid{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}.tech-only{display:none}.technician-mode .tech-only{display:block}.technician-mode .tech-only pre{max-height:420px;overflow:auto;white-space:pre-wrap}.profile-grid .card{display:flex;flex-direction:column;align-items:flex-start}.profile-grid .btn{margin-top:auto}</style><main><h1>Araha Diagnostics</h1><p>You are offline. The live PHP application and server-assisted tests require a connection.</p><p>Reconnect and reopen this page. Previously saved snapshots remain in this browser.</p></main></html>',{headers:{'Content-Type':'text/html; charset=utf-8'}}));await self.skipWaiting();})()));
-self.addEventListener('activate',e=>e.waitUntil((async()=>{for(const k of await caches.keys())if(k!==CACHE)await caches.delete(k);await self.clients.claim();})()));
+self.addEventListener('activate',e=>e.waitUntil((async()=>{for(const k of await caches.keys())if(k.startsWith('araha-diagnostics-')&&k!==CACHE)await caches.delete(k);await self.clients.claim();})()));
 self.addEventListener('fetch',e=>{const r=e.request;if(r.method!=='GET'||new URL(r.url).origin!==self.location.origin)return;if(r.mode==='navigate')e.respondWith(fetch(r).catch(async()=>await caches.match(OFFLINE)));});
 JS;
  exit;
@@ -580,7 +580,7 @@ document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()
  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;$('installApp').hidden=false;});
  $('installApp')?.addEventListener('click',async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$('installApp').hidden=true;});
  window.addEventListener('appinstalled',()=>{$('installApp').hidden=true;});
- if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register(location.pathname+'?action=service-worker',{scope:'/'}).catch(e=>console.warn('PWA registration unavailable',e));
+ if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register(location.pathname+'?action=service-worker',{scope:new URL('.',location.href).pathname}).catch(e=>console.warn('PWA registration unavailable',e));
 })();
 </script>
 </body>
