@@ -72,3 +72,16 @@ The standard upload test posts up to 4 MB to the same PHP endpoint. The loaded-l
 ## Search indexing
 
 The page sends `noindex` directives in HTML metadata. These are crawler instructions, not access control. If the site must be private, protect it with HTTP authentication or hosting-level access controls.
+
+## Diagnostic intelligence
+
+The Intelligence tab combines test results already collected in the current page into transparent, rule-based indicators:
+
+- Separate Network, Hardware, Performance, Privacy and Security domain scores, plus an overall score.
+- Domains without relevant test evidence remain **Not assessed**. The overall score averages only assessed domains and shows domain coverage separately.
+- Findings are ordered by severity and paired with practical next steps. Heuristic deductions are intentionally simple and are not calibrated against a certified benchmark.
+- Manual snapshots reuse the existing local browser history (maximum 10 entries). The dashboard can compare the current analysis with the latest saved snapshot and show recent overall-score history.
+- History is not uploaded or synchronized. Clearing local history removes saved snapshots from this browser profile.
+- Scores depend on which tests have been run and on the browser, device, network route, hosting server and test conditions. They are not security certifications, hardware grades, or guarantees of service quality.
+
+The existing troubleshooting assessment remains available separately. The Intelligence dashboard does not run permission-sensitive tests automatically; run only the tests you consent to.
