@@ -20,6 +20,20 @@ function json_response(array $data, int $status = 200): never {
     exit;
 }
 
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && ($_GET['action'] ?? '') === 'pwa-manifest') {
+ header('Content-Type: application/manifest+json; charset=utf-8'); header('Cache-Control: public, max-age=3600');
+ echo json_encode(['name'=>'Araha Device & Network Diagnostics','short_name'=>'Araha Diagnostics','description'=>'Local-first device, browser, network and privacy diagnostics.','start_url'=>'./','scope'=>'./','display'=>'standalone','background_color'=>'#080a0e','theme_color'=>'#080a0e','icons'=>[['src'=>'data:image/svg+xml,'.rawurlencode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="96" fill="#080a0e"/><path d="M256 72 430 390H82Z" fill="none" stroke="#69d3c1" stroke-width="34" stroke-linejoin="round"/><path d="M180 310h152" stroke="#69d3c1" stroke-width="30" stroke-linecap="round"/></svg>'),'sizes'=>'any','type'=>'image/svg+xml','purpose'=>'any maskable']]],JSON_UNESCAPED_SLASHES); exit;
+}
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && ($_GET['action'] ?? '') === 'service-worker') {
+ header('Content-Type: application/javascript; charset=utf-8'); header('Service-Worker-Allowed: /'); header('Cache-Control: no-cache');
+ echo <<<'JS'
+const CACHE='araha-diagnostics-shell-v1',OFFLINE='/__araha-diagnostics-offline.html';
+self.addEventListener('install',e=>e.waitUntil((async()=>{const c=await caches.open(CACHE);await c.put(OFFLINE,new Response('<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Araha Diagnostics · Offline</title><style>body{margin:0;background:#080a0e;color:#e8edf4;font:16px system-ui;min-height:100vh;display:grid;place-items:center}main{max-width:560px;padding:32px;border:1px solid #252e3a;border-radius:16px;background:#10141b}h1{color:#69d3c1}p{color:#91a0b2}.profile-grid{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}.tech-only{display:none}.technician-mode .tech-only{display:block}.technician-mode .tech-only pre{max-height:420px;overflow:auto;white-space:pre-wrap}.profile-grid .card{display:flex;flex-direction:column;align-items:flex-start}.profile-grid .btn{margin-top:auto}</style><main><h1>Araha Diagnostics</h1><p>You are offline. The live PHP application and server-assisted tests require a connection.</p><p>Reconnect and reopen this page. Previously saved snapshots remain in this browser.</p></main></html>',{headers:{'Content-Type':'text/html; charset=utf-8'}}));await self.skipWaiting();})()));
+self.addEventListener('activate',e=>e.waitUntil((async()=>{for(const k of await caches.keys())if(k!==CACHE)await caches.delete(k);await self.clients.claim();})()));
+self.addEventListener('fetch',e=>{const r=e.request;if(r.method!=='GET'||new URL(r.url).origin!==self.location.origin)return;if(r.mode==='navigate')e.respondWith(fetch(r).catch(async()=>await caches.match(OFFLINE)));});
+JS;
+ exit;
+}
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_GET['action'] ?? '') === 'upload-test') {
     // Measures upload throughput without writing the payload to disk.
     $max = 8 * 1024 * 1024;
@@ -143,6 +157,7 @@ $serverSnapshot = [
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="theme-color" content="#080a0e">
 <title>Araha | Device & Network Diagnostics</title>
+<link rel="manifest" href="?action=pwa-manifest">
 <style>
 :root{color-scheme:dark;--bg:#080a0e;--panel:#10141b;--panel2:#151b24;--line:#252e3a;--text:#e8edf4;--muted:#91a0b2;--accent:#69d3c1;--accent2:#8ab4ff;--good:#62d6a4;--warn:#f2c66d;--bad:#f28c8c;--radius:14px;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 15% -15%,#17302e 0,transparent 38%),var(--bg);color:var(--text);line-height:1.5}
@@ -196,6 +211,7 @@ footer{border-top:1px solid var(--line);margin-top:26px;padding-top:15px;display
   <article class="card"><h3>Runtime capabilities</h3><div id="capabilityDetails" class="kv"></div></article>
  </div>
 </section>
+<section class="panel active" id="overview"><div class="section-head"><div><h2>Diagnostic profiles</h2><p>Choose a run depth. Tests that request sensitive permissions are always left for you to start manually.</p></div><div class="actions"><button class="btn" id="technicianToggle" aria-pressed="false">Technician mode: Off</button><button class="btn" id="installApp" hidden>Install app</button></div></div><div class="grid profile-grid"><article class="card"><h3>Quick check</h3><p class="fine">Basic connectivity and device snapshot.</p><button class="btn primary" id="profileQuick">Run quick check</button></article><article class="card"><h3>Standard check</h3><p class="fine">Quick checks plus network, DNS and browser policy inspection.</p><button class="btn primary" id="profileStandard">Run standard check</button></article><article class="card"><h3>Advanced check</h3><p class="fine">Extended performance, network stability and server-side checks.</p><button class="btn primary" id="profileAdvanced">Run advanced check</button></article><article class="card"><h3>Full check</h3><p class="fine">All safe automated tests. Camera, microphone, GPS, sensors and WebRTC remain manual.</p><button class="btn primary" id="profileFull">Run full check</button></article></div><article class="card" style="margin-top:12px"><h3>Profile progress</h3><div class="progress"><span id="profileProgress"></span></div><div class="result" id="profileStatus">No profile running.</div><div class="actions"><button class="btn" id="profileStop" disabled>Stop profile</button><button class="btn" id="profileReport">Analyze completed results</button></div></article><article class="card tech-only" style="margin-top:12px"><h3>Technician snapshot</h3><p class="fine">Expanded raw diagnostic state. Review and redact before sharing.</p><pre id="technicianSnapshot" class="result"></pre></article></section>
 <section class="panel" id="intelligence"><div class="section-head"><div><h2>Diagnostic intelligence</h2><p>Evidence-based health indicators, prioritized findings and comparisons with locally saved reports. Unrun tests are not treated as passes.</p></div><div class="actions"><button class="btn primary" id="intelligenceRun">Analyze available results</button><button class="btn" id="intelligenceSave">Save diagnostic snapshot</button></div></div><div class="notice">Scores are provisional rule-based indicators, not certifications. Only domains with test evidence receive scores. Repeat tests under similar conditions before comparing sessions.</div><div class="grid score-grid" id="healthScores"><article class="card"><h3>Overall health</h3><div class="score-value" id="overallScore">Not assessed</div><p class="fine" id="overallCoverage">Run tests, then analyze.</p></article><article class="card"><h3>Network</h3><div class="score-value" id="scoreNetwork">—</div><p class="fine" id="coverageNetwork">Not assessed</p></article><article class="card"><h3>Hardware</h3><div class="score-value" id="scoreHardware">—</div><p class="fine" id="coverageHardware">Not assessed</p></article><article class="card"><h3>Performance</h3><div class="score-value" id="scorePerformance">—</div><p class="fine" id="coveragePerformance">Not assessed</p></article><article class="card"><h3>Privacy</h3><div class="score-value" id="scorePrivacy">—</div><p class="fine" id="coveragePrivacy">Not assessed</p></article><article class="card"><h3>Security</h3><div class="score-value" id="scoreSecurity">—</div><p class="fine" id="coverageSecurity">Not assessed</p></article></div><div class="grid"><article class="card"><h3>Prioritized findings</h3><div id="intelligenceFindings" class="result">No assessment generated.</div></article><article class="card"><h3>Recommended actions</h3><div id="intelligenceActions" class="result">Recommendations will appear here.</div></article></div><div class="grid"><article class="card"><h3>Diagnostic history</h3><div class="kv" id="intelligenceHistoryStats"></div><div class="actions"><button class="btn" id="intelligenceCompare">Compare with latest saved snapshot</button><button class="btn" id="intelligenceClear">Clear local history</button></div><div class="result" id="intelligenceHistory">History stays in this browser.</div></article><article class="card"><h3>Score trend</h3><div id="intelligenceTrend" class="result">Save at least two analyzed snapshots to compare trends.</div></article></div><p class="fine">Up to 10 snapshots are stored locally in this browser profile. No server database or external AI service is used.</p></section>
 <section class="panel" id="network">
  <div class="section-head"><div><h2>Network laboratory</h2><p>Connectivity, public address families, latency, DNS-over-HTTPS reachability and throughput.</p></div></div>
@@ -532,6 +548,35 @@ document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()
  $('intelligenceCompare')?.addEventListener('click',compare);
  $('intelligenceClear')?.addEventListener('click',()=>{if(!confirm('Clear all locally saved diagnostic snapshots from this browser?'))return;localStorage.removeItem('araha_diag_history');stats();trend();$('intelligenceHistory').textContent='Local history cleared.'});
  stats();trend();
+})();
+
+/* Profiles, technician view and installable PWA shell */
+(function(){
+ let running=false,stopRequested=false,installPrompt=null;
+ const $=id=>document.getElementById(id);
+ const profiles={
+ quick:[['data-run','addresses'],['data-run','latency'],['data-run','battery'],['data-run','storage']],
+ standard:[['data-run','addresses'],['data-run','latency'],['data-run','dns'],['data-run','download'],['data-extra','headers'],['data-run','battery'],['data-run','storage'],['data-extra','access'],['data-extra','matrix']],
+ advanced:[['data-run','addresses'],['data-run','latency'],['data-run','dns'],['data-run','download'],['data-run','upload'],['data-extra','multiip'],['data-extra','stability'],['data-extra','headers'],['data-extra','quality'],['data-extra','buffer'],['data-extra','tls'],['data-extra','http'],['data-extra','resources'],['data-extra','frames'],['data-extra','bench'],['data-extra','gpu'],['data-extra','access'],['data-extra','matrix']],
+ full:[['data-run','addresses'],['data-run','latency'],['data-run','dns'],['data-run','download'],['data-run','upload'],['data-run','battery'],['data-run','storage'],['data-run','permissions'],['data-run','media'],['data-run','canvas'],['data-run','audio'],['data-run','jsbench'],['data-run','fps'],['data-extra','multiip'],['data-extra','stability'],['data-extra','headers'],['data-extra','quality'],['data-extra','buffer'],['data-extra','tls'],['data-extra','http'],['data-extra','resources'],['data-extra','frames'],['data-extra','bench'],['data-extra','gpu'],['data-extra','access'],['data-extra','matrix'],['data-extra','gamepad']]
+ };
+ const manual=['GPS location','WebRTC candidate inspection','Camera and microphone preview','Microphone level test','Keyboard rollover','Pointer event sampling','Display visual patterns','Speaker channel test','Motion and orientation sensors'];
+ async function runProfile(name){
+  if(running)return;running=true;stopRequested=false;const list=profiles[name],ids=['profileQuick','profileStandard','profileAdvanced','profileFull'];ids.forEach(id=>$(id).disabled=true);$('profileStop').disabled=false;
+  let done=0,failed=[];const status=$('profileStatus'),bar=$('profileProgress');status.textContent='Starting '+name+' profile…';bar.style.width='0%';
+  for(const [attr,key] of list){if(stopRequested)break;const b=document.querySelector('button['+attr+'="'+key+'"]');try{if(!b)throw Error('Control unavailable');status.textContent='Running '+key+' ('+(done+1)+'/'+list.length+')';b.disabled=true;b.click();await new Promise(resolve=>setTimeout(resolve,220));}catch(e){failed.push(key+': '+e.message);}finally{if(b)b.disabled=false;done++;bar.style.width=Math.round(done/list.length*100)+'%';}}
+  running=false;ids.forEach(id=>$(id).disabled=false);$('profileStop').disabled=true;
+  status.textContent=(stopRequested?'Stopped early. ':'Completed '+name+' profile. ')+done+'/'+list.length+' actions attempted. '+(failed.length?'Issues: '+failed.join('; '):'No action errors reported.')+' Permission-sensitive tests were not started: '+manual.join(', ')+'.';
+ }
+ ['Quick','Standard','Advanced','Full'].forEach(n=>$('profile'+n)?.addEventListener('click',()=>runProfile(n.toLowerCase())));
+ $('profileStop')?.addEventListener('click',()=>{stopRequested=true;$('profileStatus').textContent='Stop requested; the current test will finish first.';});
+ $('profileReport')?.addEventListener('click',()=>{document.querySelector('[data-tab="intelligence"]')?.click();$('intelligenceRun')?.click();});
+ $('technicianToggle')?.addEventListener('click',()=>{const on=document.body.classList.toggle('technician-mode');$('technicianToggle').textContent='Technician mode: '+(on?'On':'Off');$('technicianToggle').setAttribute('aria-pressed',String(on));if(on)$('technicianSnapshot').textContent=JSON.stringify(D,null,2);});
+ const observer=new MutationObserver(()=>{if(document.body.classList.contains('technician-mode')&&$('technicianSnapshot'))$('technicianSnapshot').textContent=JSON.stringify(D,null,2);});observer.observe(document.body,{childList:true,subtree:true});
+ window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;$('installApp').hidden=false;});
+ $('installApp')?.addEventListener('click',async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$('installApp').hidden=true;});
+ window.addEventListener('appinstalled',()=>{$('installApp').hidden=true;});
+ if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register(location.pathname+'?action=service-worker',{scope:'/'}).catch(e=>console.warn('PWA registration unavailable',e));
 })();
 </script>
 </body>
